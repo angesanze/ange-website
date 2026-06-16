@@ -1,0 +1,91 @@
+name: ange-website
+
+# Local development stack for ange-website.
+# For now only the database runs in Docker; Strapi (backend) and Vite (frontend)
+# are added as services below once scaffolded. Ports are chosen to avoid clashing
+# with the other stacks already running on this machine (exteryo, solverstore, …):
+#   - Postgres : host 5434 -> 5432
+#   - Strapi   : host 1338 -> 1337
+#   - Vite     : host 5175 -> 5173
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ange_website_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ange_website
+      POSTGRES_USER: ange
+      POSTGRES_PASSWORD: ange_dev_pw
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ange -d ange_website"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - ange-net
+
+  # Strapi v5 backend. Runs in Docker (Node 22) so it survives as a daemon and
+  # matches the production image. Source is bind-mounted for hot-reload; deps are
+  # installed into a named volume so they're built for the container, not the host.
+  backend:
+    image: node:22-bookworm-slim
+    container_name: ange_website_backend
+    restart: unless-stopped
+    working_dir: /opt/app
+    command: sh -c "npm install --no-audit --no-fund && npm run develop"
+    environment:
+      # Override the host-oriented DB values from .env for the compose network.
+      # Secrets (APP_KEYS, JWT, …) still come from the bind-mounted backend/.env.
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: ange_website
+      DATABASE_USERNAME: ange
+      DATABASE_PASSWORD: ange_dev_pw
+      DATABASE_SSL: "false"
+    ports:
+      - "1338:1338"
+    volumes:
+      - ./backend:/opt/app
+      - backend_node_modules:/opt/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ange-net
+
+  # Vite dev server (React SPA). API calls are made client-side from the browser,
+  # so VITE_API_URL points at the host-mapped Strapi (localhost:1338), and the
+  # container port matches the host port to keep HMR's websocket aligned.
+  frontend:
+    image: node:22-bookworm-slim
+    container_name: ange_website_frontend
+    restart: unless-stopped
+    working_dir: /opt/app
+    command: sh -c "npm install --no-audit --no-fund && npm run dev"
+    environment:
+      VITE_PORT: "5175"
+      VITE_API_URL: http://localhost:1338
+    ports:
+      - "5175:5175"
+    volumes:
+      - ./frontend:/opt/app
+      - frontend_node_modules:/opt/app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - ange-net
+
+networks:
+  ange-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  backend_node_modules:
+  frontend_node_modules:

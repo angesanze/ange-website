@@ -1,0 +1,124 @@
+{
+  "kind": "singleType",
+  "collectionName": "globals",
+  "info": {
+    "singularName": "global",
+    "pluralName": "globals",
+    "displayName": "Global",
+    "description": "Site-wide settings: titles, section icons, fonts and the editable copy used across the whole site."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "siteName": {
+      "type": "string",
+      "default": "ange",
+      "description": "Brand name shown in the header and the browser tab."
+    },
+    "tagline": {
+      "type": "string",
+      "description": "Short tagline used in the browser tab title and meta description."
+    },
+    "brandIcon": {
+      "type": "customField",
+      "customField": "global::icon"
+    },
+    "brandImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"],
+      "description": "Optional logo image shown top-left instead of the brand icon."
+    },
+    "homeTitle": {
+      "type": "string",
+      "description": "The big headline on the homepage."
+    },
+    "homeSubtitle": {
+      "type": "text",
+      "description": "Optional line under the homepage headline."
+    },
+    "homeCaption": {
+      "type": "string",
+      "description": "The small caption under the homepage treemap."
+    },
+    "filesTitle": {
+      "type": "string",
+      "description": "Title of the 'all files' listing."
+    },
+    "filesDescription": {
+      "type": "text",
+      "description": "Description shown on the 'all files' listing header."
+    },
+    "filesIcon": {
+      "type": "customField",
+      "customField": "global::icon"
+    },
+    "filesImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"],
+      "description": "Optional image shown in the Files header instead of the icon."
+    },
+    "thoughtsTitle": {
+      "type": "string",
+      "description": "Title of the Thoughts section."
+    },
+    "thoughtsSubtitle": {
+      "type": "text",
+      "description": "Intro paragraph of the Thoughts section."
+    },
+    "thoughtsIcon": {
+      "type": "customField",
+      "customField": "global::icon"
+    },
+    "thoughtsDefaultView": {
+      "type": "enumeration",
+      "enum": ["carousel", "grid", "stack", "random"],
+      "default": "carousel",
+      "description": "Which layout the Thoughts page opens in."
+    },
+    "aboutTitle": {
+      "type": "string",
+      "description": "Breadcrumb / label for the About section."
+    },
+    "aboutIcon": {
+      "type": "customField",
+      "customField": "global::icon"
+    },
+    "navFiles": {
+      "type": "string",
+      "description": "Header nav label for the files listing."
+    },
+    "navThoughts": {
+      "type": "string",
+      "description": "Header nav label for the thoughts section."
+    },
+    "navAbout": {
+      "type": "string",
+      "description": "Header nav label for the about page."
+    },
+    "footerText": {
+      "type": "string",
+      "description": "Free text shown on the left of the footer."
+    },
+    "headingFont": {
+      "type": "string",
+      "description": "CSS font-family for headings. Use a system/web-safe font or one added under Custom fonts."
+    },
+    "bodyFont": {
+      "type": "string",
+      "description": "CSS font-family for body text."
+    },
+    "monoFont": {
+      "type": "string",
+      "description": "CSS font-family for the monospace 'path' text."
+    },
+    "customFonts": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.custom-font"
+    }
+  }
+}

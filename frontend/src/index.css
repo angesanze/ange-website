@@ -1,0 +1,184 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ *
+ * Warm, cozy design tokens (Tailwind v4 CSS-first config).            *
+ * Coffee / terracotta / amber on cream.                              *
+ * ------------------------------------------------------------------ */
+@theme {
+  --font-display: 'Spectral', ui-serif, Georgia, serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --color-canvas: #ece0c6;
+  --color-canvas-deep: #e2d2b1;
+  --color-paper: #f4ecd7;
+  --color-paper-2: #ebddc1;
+
+  --color-ink: #2a2118;
+  --color-ink-soft: #685943;
+  --color-ink-faint: #9a8461;
+
+  --color-line: #d8c39e;
+  --color-line-soft: #ecdfc4;
+
+  --color-terracotta: #b05f31;
+  --color-clay: #97491f;
+  --color-amber: #d09a4b;
+  --color-honey: #e3b870;
+  --color-coffee: #6b4a32;
+  --color-sage: #7d8a52;
+
+  --radius-block: 1.4rem;
+  --shadow-soft: 0 1px 2px rgba(74, 52, 34, 0.04), 0 8px 24px -12px rgba(74, 52, 34, 0.18);
+  --shadow-lift: 0 2px 6px rgba(74, 52, 34, 0.08), 0 18px 40px -18px rgba(74, 52, 34, 0.28);
+}
+
+/* ------------------------------------------------------------------ *
+ * Base                                                               *
+ * ------------------------------------------------------------------ */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100svh;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    background-image:
+      radial-gradient(1100px 620px at 100% -8%, rgba(208, 154, 75, 0.20), transparent 60%),
+      radial-gradient(820px 520px at -8% 108%, rgba(125, 138, 82, 0.13), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  /* Faint paper grain so the warmth feels tactile, not flat. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    color: var(--color-ink);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: rgba(194, 104, 61, 0.22);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-terracotta);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Warm scrollbar */
+  * {
+    scrollbar-color: var(--color-line) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border-radius: 999px;
+    border: 3px solid var(--color-canvas);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Utilities                                                          *
+ * ------------------------------------------------------------------ */
+
+/* Tabular monospace "path" look used across the filesystem UI. */
+@utility path-text {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+
+/* Long-form article styling for rendered markdown. */
+@layer components {
+  .article {
+    color: var(--color-ink);
+    font-size: 1.075rem;
+    line-height: 1.78;
+  }
+  .article > * + * {
+    margin-top: 1.15em;
+  }
+  .article h2 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    margin-top: 2em;
+    line-height: 1.2;
+  }
+  .article h3 {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    margin-top: 1.6em;
+  }
+  .article a {
+    color: var(--color-clay);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+  .article strong {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+  .article blockquote {
+    border-left: 3px solid var(--color-amber);
+    padding-left: 1.1rem;
+    color: var(--color-ink-soft);
+    font-style: italic;
+  }
+  .article code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--color-paper-2);
+    padding: 0.15em 0.4em;
+    border-radius: 6px;
+  }
+  .article pre {
+    background: #2b2018;
+    color: #f6ecdd;
+    padding: 1rem 1.2rem;
+    border-radius: 14px;
+    overflow-x: auto;
+    font-size: 0.9rem;
+  }
+  .article pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+  .article ul, .article ol {
+    padding-left: 1.4rem;
+  }
+  .article li + li {
+    margin-top: 0.4em;
+  }
+  .article ul { list-style: disc; }
+  .article ol { list-style: decimal; }
+}

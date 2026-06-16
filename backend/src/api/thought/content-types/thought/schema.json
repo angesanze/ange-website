@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "thoughts",
+  "info": {
+    "singularName": "thought",
+    "pluralName": "thoughts",
+    "displayName": "Thought",
+    "description": "A short, tweet-sized extemporaneous thought. Lives in its own carousel, outside the filesystem."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "body": {
+      "type": "text",
+      "required": true,
+      "maxLength": 280
+    },
+    "mood": {
+      "type": "enumeration",
+      "enum": [
+        "calm",
+        "spark",
+        "warm",
+        "night",
+        "bitter",
+        "sweet"
+      ],
+      "default": "warm"
+    }
+  }
+}

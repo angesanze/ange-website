@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "categories",
+  "info": {
+    "singularName": "category",
+    "pluralName": "categories",
+    "displayName": "Category",
+    "description": "A content category. Each one becomes a block in the homepage filesystem treemap, sized by how much content it holds."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "color": {
+      "type": "string",
+      "default": "#C97B5A",
+      "regex": "^#([0-9a-fA-F]{6})$"
+    },
+    "accent": {
+      "type": "string",
+      "regex": "^#([0-9a-fA-F]{6})$"
+    },
+    "icon": {
+      "type": "customField",
+      "customField": "global::icon"
+    },
+    "order": {
+      "type": "integer",
+      "default": 0
+    },
+    "posts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::post.post",
+      "mappedBy": "category"
+    }
+  }
+}

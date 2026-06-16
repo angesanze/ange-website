@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_shared_custom_fonts",
+  "info": {
+    "displayName": "Custom Font",
+    "icon": "brush",
+    "description": "A web font to load site-wide. Add it here, then reference its family name in the heading / body / mono font fields."
+  },
+  "options": {},
+  "attributes": {
+    "family": {
+      "type": "string",
+      "required": true,
+      "description": "The exact CSS font-family name, e.g. 'Playfair Display' or 'IBM Plex Sans'."
+    },
+    "url": {
+      "type": "string",
+      "required": true,
+      "description": "A stylesheet URL that loads the font, e.g. a Google Fonts link: https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap"
+    }
+  }
+}
