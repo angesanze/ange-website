@@ -6,6 +6,7 @@ Production runs on **Google Cloud**, project `ange-website` (region `europe-west
 | ---------------- | ---------------------------------------- |
 | Frontend (SPA)   | Firebase Hosting (`ange-website.web.app`)  |
 | Backend (Strapi) | Cloud Run (`ange-website-backend`)        |
+| MCP server       | Cloud Run (`ange-website-mcp`)            |
 | Database         | Cloud SQL for PostgreSQL (`ange-website-db`) |
 | Media uploads    | Cloud Storage bucket (`ange-website-media`)  |
 | Images           | Artifact Registry (`ange-website`)        |
@@ -64,6 +65,26 @@ rm key.json
   gcloud run services update ange-website-backend --region=europe-west1 \
     --update-env-vars=CORS_ORIGINS=<frontend-url>
   ```
+
+## MCP server (work on the site via prompts)
+
+`ange-website-mcp` (Cloud Run, code in `mcp/`) exposes the CMS to an AI client
+over MCP (Streamable HTTP at `POST /mcp`): list/create/update/delete +
+publish/unpublish posts & thoughts, and edit categories / global / profile.
+
+Two secrets drive it:
+- `ange-website-mcp-auth-token` — the bearer your AI client must send. Read it with
+  `gcloud secrets versions access latest --secret=ange-website-mcp-auth-token`.
+- `ange-website-mcp-strapi-token` — a Strapi **full-access** API token. **Activate
+  it once**: in the admin (`<backend>/admin` → Settings → API Tokens → create, type
+  *Full access*), then:
+  ```bash
+  printf '<the-token>' | gcloud secrets versions add ange-website-mcp-strapi-token --data-file=-
+  gcloud run services update ange-website-mcp --region=europe-west1 --update-secrets=STRAPI_API_TOKEN=ange-website-mcp-strapi-token:latest
+  ```
+
+Connect it from `https://<mcp-url>/mcp` with header `Authorization: Bearer <auth-token>`
+(see `mcp/README.md` for Claude Desktop / Cursor snippets).
 
 ## Cost
 

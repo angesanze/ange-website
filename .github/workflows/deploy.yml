@@ -89,9 +89,30 @@ jobs:
         working-directory: frontend
         run: npx --yes firebase-tools@latest deploy --only hosting --project "$PROJECT_ID" --non-interactive
 
+      # ── MCP server (Cloud Run) ───────────────────────────────────────────
+      - name: Build & push MCP
+        run: |
+          IMAGE="${GAR}/mcp:${GITHUB_SHA}"
+          docker build -t "$IMAGE" ./mcp
+          docker push "$IMAGE"
+          echo "MCP_IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Deploy MCP to Cloud Run
+        run: |
+          gcloud run deploy ange-website-mcp \
+            --image="$MCP_IMAGE" \
+            --region="$REGION" \
+            --service-account="$RUNTIME_SA" \
+            --allow-unauthenticated \
+            --port=8080 --memory=512Mi --cpu=1 \
+            --set-env-vars=STRAPI_URL=${BACKEND_URL} \
+            --set-secrets=MCP_AUTH_TOKEN=${PROJECT_ID}-mcp-auth-token:latest,STRAPI_API_TOKEN=${PROJECT_ID}-mcp-strapi-token:latest
+          echo "MCP_URL=$(gcloud run services describe ange-website-mcp --region=$REGION --format='value(status.url)')" >> "$GITHUB_ENV"
+
       - name: Summary
         run: |
           echo "### Deployed :rocket:" >> "$GITHUB_STEP_SUMMARY"
           echo "- Frontend: https://${PROJECT_ID}.web.app" >> "$GITHUB_STEP_SUMMARY"
           echo "- Backend:  $BACKEND_URL" >> "$GITHUB_STEP_SUMMARY"
           echo "- Admin:    ${BACKEND_URL}/admin" >> "$GITHUB_STEP_SUMMARY"
+          echo "- MCP:      ${MCP_URL}/mcp" >> "$GITHUB_STEP_SUMMARY"
