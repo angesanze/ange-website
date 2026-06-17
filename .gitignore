@@ -45,3 +45,13 @@ Thumbs.db
 
 # Claude Code local settings (not part of the project)
 .claude/
+
+# Terraform / OpenTofu
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/*.tfstate
+infra/*.tfstate.*
+infra/*.tfvars
+!infra/*.tfvars.example
+infra/crash*.log
+infra/tofu_outputs.json

@@ -1,0 +1,10 @@
+node_modules
+dist
+.vite
+build
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+*.log

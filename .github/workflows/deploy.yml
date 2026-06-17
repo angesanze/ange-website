@@ -1,0 +1,100 @@
+name: Build and Deploy
+
+# Deploys on every push to main:
+#   1. Build + push the backend (Strapi) image, deploy it to Cloud Run.
+#   2. Build the frontend with VITE_API_URL = backend URL, deploy it to Cloud Run.
+#
+# One-time infra (Cloud SQL, GCS, Artifact Registry, service accounts, secrets)
+# is provisioned by Terraform in infra/ — see DEPLOY.md.
+#
+# Required GitHub secret:
+#   GCP_CREDENTIALS — JSON key for the deployer service account
+#                     (ange-website-deployer@ange-website.iam.gserviceaccount.com)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ange-website
+  REGION: europe-west1
+  GAR: europe-west1-docker.pkg.dev/ange-website/ange-website
+  BACKEND_SERVICE: ange-website-backend
+  FRONTEND_SERVICE: ange-website-frontend
+  RUNTIME_SA: ange-website-run@ange-website.iam.gserviceaccount.com
+  SQL_CONNECTION: ange-website:europe-west1:ange-website-db
+  GCS_BUCKET: ange-website-media
+  DB_NAME: ange_website
+  DB_USER: ange_website
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      # ── Backend ──────────────────────────────────────────────────────────
+      - name: Build & push backend
+        run: |
+          IMAGE="${GAR}/backend:${GITHUB_SHA}"
+          docker build -t "$IMAGE" ./backend
+          docker push "$IMAGE"
+          echo "BACKEND_IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Deploy backend to Cloud Run
+        run: |
+          gcloud run deploy "$BACKEND_SERVICE" \
+            --image="$BACKEND_IMAGE" \
+            --region="$REGION" \
+            --service-account="$RUNTIME_SA" \
+            --add-cloudsql-instances="$SQL_CONNECTION" \
+            --allow-unauthenticated \
+            --port=1337 \
+            --memory=1Gi --cpu=1 --timeout=300 \
+            --set-env-vars=NODE_ENV=production,DATABASE_CLIENT=postgres,DATABASE_HOST=/cloudsql/${SQL_CONNECTION},DATABASE_NAME=${DB_NAME},DATABASE_USERNAME=${DB_USER},GCS_BUCKET_NAME=${GCS_BUCKET} \
+            --set-secrets=APP_KEYS=${PROJECT_ID}-app-keys:latest,API_TOKEN_SALT=${PROJECT_ID}-api-token-salt:latest,ADMIN_JWT_SECRET=${PROJECT_ID}-admin-jwt-secret:latest,TRANSFER_TOKEN_SALT=${PROJECT_ID}-transfer-token-salt:latest,JWT_SECRET=${PROJECT_ID}-jwt-secret:latest,ENCRYPTION_KEY=${PROJECT_ID}-encryption-key:latest,DATABASE_PASSWORD=${PROJECT_ID}-db-password:latest
+
+      - name: Capture backend URL
+        run: |
+          URL=$(gcloud run services describe "$BACKEND_SERVICE" --region="$REGION" --format='value(status.url)')
+          echo "BACKEND_URL=$URL" >> "$GITHUB_ENV"
+          echo "Backend: $URL"
+
+      # ── Frontend ─────────────────────────────────────────────────────────
+      - name: Build & push frontend
+        run: |
+          IMAGE="${GAR}/frontend:${GITHUB_SHA}"
+          docker build --build-arg VITE_API_URL="$BACKEND_URL" -t "$IMAGE" ./frontend
+          docker push "$IMAGE"
+          echo "FRONTEND_IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Deploy frontend to Cloud Run
+        run: |
+          gcloud run deploy "$FRONTEND_SERVICE" \
+            --image="$FRONTEND_IMAGE" \
+            --region="$REGION" \
+            --allow-unauthenticated \
+            --port=8080 \
+            --memory=512Mi --cpu=1
+
+      - name: Summary
+        run: |
+          FE=$(gcloud run services describe "$FRONTEND_SERVICE" --region="$REGION" --format='value(status.url)')
+          echo "### Deployed :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Frontend: $FE" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Backend:  $BACKEND_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Admin:    ${BACKEND_URL}/admin" >> "$GITHUB_STEP_SUMMARY"

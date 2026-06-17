@@ -1,0 +1,12 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Generate strong values with:
+#   openssl rand -base64 32
+project_id = "ange-website"
+region     = "europe-west1"
+
+db_password         = "CHANGE_ME"
+app_keys            = "CHANGE_ME_1,CHANGE_ME_2"
+api_token_salt      = "CHANGE_ME"
+admin_jwt_secret    = "CHANGE_ME"
+transfer_token_salt = "CHANGE_ME"
+jwt_secret          = "CHANGE_ME"
+encryption_key      = "CHANGE_ME"
