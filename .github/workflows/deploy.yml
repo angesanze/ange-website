@@ -87,6 +87,7 @@ jobs:
           gcloud run deploy "$FRONTEND_SERVICE" \
             --image="$FRONTEND_IMAGE" \
             --region="$REGION" \
+            --service-account="$RUNTIME_SA" \
             --allow-unauthenticated \
             --port=8080 \
             --memory=512Mi --cpu=1
