@@ -8,6 +8,8 @@ resource "google_project_service" "apis" {
     "secretmanager.googleapis.com",
     "storage.googleapis.com",
     "iam.googleapis.com",
+    "firebase.googleapis.com",
+    "firebasehosting.googleapis.com",
   ])
   service            = each.value
   disable_on_destroy = false

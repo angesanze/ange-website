@@ -4,7 +4,7 @@ Production runs on **Google Cloud**, project `ange-website` (region `europe-west
 
 | Piece            | Service                                  |
 | ---------------- | ---------------------------------------- |
-| Frontend (SPA)   | Cloud Run (`ange-website-frontend`, nginx) |
+| Frontend (SPA)   | Firebase Hosting (`ange-website.web.app`)  |
 | Backend (Strapi) | Cloud Run (`ange-website-backend`)        |
 | Database         | Cloud SQL for PostgreSQL (`ange-website-db`) |
 | Media uploads    | Cloud Storage bucket (`ange-website-media`)  |
@@ -12,8 +12,8 @@ Production runs on **Google Cloud**, project `ange-website` (region `europe-west
 | Secrets          | Secret Manager                            |
 
 The backend reaches Cloud SQL through Cloud Run's built-in **Cloud SQL connector**
-(Unix socket) — no VPC. Media is stored in GCS so it survives revisions. Both
-Cloud Run services scale to zero.
+(Unix socket) — no VPC. Media is stored in GCS so it survives revisions. The
+backend Cloud Run service scales to zero; the frontend is static on Firebase's CDN.
 
 ## One-time infrastructure (Terraform / OpenTofu)
 
@@ -40,7 +40,9 @@ secrets in Secret Manager. State is local (`infra/terraform.tfstate`, gitignored
 
 1. builds & pushes the backend image → deploys it to Cloud Run (with the Cloud SQL
    connection, the runtime SA, and the Secret Manager secrets wired in);
-2. builds the frontend with `VITE_API_URL` = the backend URL → deploys it.
+2. builds the frontend with `VITE_API_URL` = the backend URL → deploys it to
+   **Firebase Hosting** (`firebase deploy`, authenticated with the same
+   `GCP_CREDENTIALS` deployer key, which has `roles/firebasehosting.admin`).
 
 It needs **one** GitHub secret:
 

@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 6.0"
     }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 6.0"
+    }
   }
   # State is kept locally (infra/terraform.tfstate, gitignored). For a team,
   # switch to a remote GCS backend.
@@ -13,6 +17,13 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+}
+
+# Firebase resources require the google-beta provider.
+provider "google-beta" {
+  project               = var.project_id
+  region                = var.region
+  user_project_override = true
 }
 
 locals {

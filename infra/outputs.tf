@@ -35,3 +35,8 @@ output "runtime_sa_email" {
 output "deployer_sa_email" {
   value = google_service_account.deployer.email
 }
+
+output "firebase_hosting_url" {
+  description = "Live frontend URL (Firebase Hosting default site)"
+  value       = "https://${google_firebase_hosting_site.default.site_id}.web.app"
+}

@@ -21,7 +21,6 @@ env:
   REGION: europe-west1
   GAR: europe-west1-docker.pkg.dev/ange-website/ange-website
   BACKEND_SERVICE: ange-website-backend
-  FRONTEND_SERVICE: ange-website-frontend
   RUNTIME_SA: ange-website-run@ange-website.iam.gserviceaccount.com
   SQL_CONNECTION: ange-website:europe-west1:ange-website-db
   GCS_BUCKET: ange-website-media
@@ -74,28 +73,25 @@ jobs:
           echo "BACKEND_URL=$URL" >> "$GITHUB_ENV"
           echo "Backend: $URL"
 
-      # ── Frontend ─────────────────────────────────────────────────────────
-      - name: Build & push frontend
-        run: |
-          IMAGE="${GAR}/frontend:${GITHUB_SHA}"
-          docker build --build-arg VITE_API_URL="$BACKEND_URL" -t "$IMAGE" ./frontend
-          docker push "$IMAGE"
-          echo "FRONTEND_IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      # ── Frontend (Firebase Hosting) ──────────────────────────────────────
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-      - name: Deploy frontend to Cloud Run
+      - name: Build frontend
+        working-directory: frontend
         run: |
-          gcloud run deploy "$FRONTEND_SERVICE" \
-            --image="$FRONTEND_IMAGE" \
-            --region="$REGION" \
-            --service-account="$RUNTIME_SA" \
-            --allow-unauthenticated \
-            --port=8080 \
-            --memory=512Mi --cpu=1
+          npm ci
+          VITE_API_URL="$BACKEND_URL" npm run build
+
+      - name: Deploy frontend to Firebase Hosting
+        working-directory: frontend
+        run: npx --yes firebase-tools@latest deploy --only hosting --project "$PROJECT_ID" --non-interactive
 
       - name: Summary
         run: |
-          FE=$(gcloud run services describe "$FRONTEND_SERVICE" --region="$REGION" --format='value(status.url)')
           echo "### Deployed :rocket:" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Frontend: $FE" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Frontend: https://${PROJECT_ID}.web.app" >> "$GITHUB_STEP_SUMMARY"
           echo "- Backend:  $BACKEND_URL" >> "$GITHUB_STEP_SUMMARY"
           echo "- Admin:    ${BACKEND_URL}/admin" >> "$GITHUB_STEP_SUMMARY"
