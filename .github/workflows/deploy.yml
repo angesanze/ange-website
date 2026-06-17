@@ -64,7 +64,7 @@ jobs:
             --allow-unauthenticated \
             --port=1337 \
             --memory=1Gi --cpu=1 --timeout=300 \
-            --set-env-vars=NODE_ENV=production,DATABASE_CLIENT=postgres,DATABASE_HOST=/cloudsql/${SQL_CONNECTION},DATABASE_NAME=${DB_NAME},DATABASE_USERNAME=${DB_USER},GCS_BUCKET_NAME=${GCS_BUCKET} \
+            --set-env-vars=NODE_ENV=production,DATABASE_CLIENT=postgres,DATABASE_HOST=/cloudsql/${SQL_CONNECTION},DATABASE_NAME=${DB_NAME},DATABASE_USERNAME=${DB_USER},GCS_BUCKET_NAME=${GCS_BUCKET},SEED_CONTENT=false \
             --set-secrets=APP_KEYS=${PROJECT_ID}-app-keys:latest,API_TOKEN_SALT=${PROJECT_ID}-api-token-salt:latest,ADMIN_JWT_SECRET=${PROJECT_ID}-admin-jwt-secret:latest,TRANSFER_TOKEN_SALT=${PROJECT_ID}-transfer-token-salt:latest,JWT_SECRET=${PROJECT_ID}-jwt-secret:latest,ENCRYPTION_KEY=${PROJECT_ID}-encryption-key:latest,DATABASE_PASSWORD=${PROJECT_ID}-db-password:latest
 
       - name: Capture backend URL

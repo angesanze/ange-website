@@ -312,6 +312,13 @@ export async function seed(strapi: Strapi) {
     strapi.log.info('[seed] global settings created');
   }
 
+  // Content seeding is opt-out via SEED_CONTENT=false (set in production), so that
+  // deleting the sample content doesn't get repopulated on the next boot.
+  if (process.env.SEED_CONTENT === 'false') {
+    strapi.log.info('[seed] content seeding disabled (SEED_CONTENT=false) — skipping');
+    return;
+  }
+
   const existing = await strapi.db.query('api::category.category').count();
   if (existing > 0) {
     strapi.log.info('[seed] content already present — skipping content seed');
