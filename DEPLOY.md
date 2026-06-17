@@ -86,6 +86,18 @@ Two secrets drive it:
 Connect it from `https://<mcp-url>/mcp` with header `Authorization: Bearer <auth-token>`
 (see `mcp/README.md` for Claude Desktop / Cursor snippets).
 
+## Custom domain (ange.rocks)
+
+The site is served at **https://ange.rocks** (Firebase Hosting custom domain).
+`frontend/firebase.json` proxies Strapi's paths (`/admin`, `/content-manager`,
+`/content-type-builder`, `/upload`, `/i18n`, `/users-permissions`, `/api`) to the
+Cloud Run backend, so the **admin lives at https://ange.rocks/admin** while the rest
+is the SPA. The backend runs with `PUBLIC_URL=https://ange.rocks` so the admin's API
+calls resolve to those proxied paths.
+
+> Firebase → Cloud Run proxying has a ~32 MB request cap; for very large media
+> uploads, use the backend's Cloud Run URL `/admin` directly.
+
 ## Cost
 
 Roughly a few €/month: Cloud SQL `db-f1-micro` is the only always-on cost; both
