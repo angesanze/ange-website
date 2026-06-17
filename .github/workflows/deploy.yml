@@ -99,14 +99,18 @@ jobs:
 
       - name: Deploy MCP to Cloud Run
         run: |
+          # The MCP service is its own OAuth issuer, so it must know its public URL
+          # at startup. The URL is stable across revisions — read it from the live
+          # service (empty on a first-ever deploy, which just leaves OAuth off).
+          MCP_PUBLIC_URL=$(gcloud run services describe ange-website-mcp --region="$REGION" --format='value(status.url)' 2>/dev/null || true)
           gcloud run deploy ange-website-mcp \
             --image="$MCP_IMAGE" \
             --region="$REGION" \
             --service-account="$RUNTIME_SA" \
             --allow-unauthenticated \
             --port=8080 --memory=512Mi --cpu=1 \
-            --set-env-vars=STRAPI_URL=${BACKEND_URL} \
-            --set-secrets=MCP_AUTH_TOKEN=${PROJECT_ID}-mcp-auth-token:latest,STRAPI_API_TOKEN=${PROJECT_ID}-mcp-strapi-token:latest
+            --set-env-vars=STRAPI_URL=${BACKEND_URL},PUBLIC_URL=${MCP_PUBLIC_URL} \
+            --set-secrets=MCP_AUTH_TOKEN=${PROJECT_ID}-mcp-auth-token:latest,STRAPI_API_TOKEN=${PROJECT_ID}-mcp-strapi-token:latest,MCP_OAUTH_SECRET=${PROJECT_ID}-mcp-oauth-secret:latest,MCP_LOGIN_PASSWORD=${PROJECT_ID}-mcp-login-password:latest
           echo "MCP_URL=$(gcloud run services describe ange-website-mcp --region=$REGION --format='value(status.url)')" >> "$GITHUB_ENV"
 
       - name: Summary

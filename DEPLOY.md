@@ -72,8 +72,9 @@ rm key.json
 over MCP (Streamable HTTP at `POST /mcp`): list/create/update/delete +
 publish/unpublish posts & thoughts, and edit categories / global / profile.
 
-Two secrets drive it:
-- `ange-website-mcp-auth-token` — the bearer your AI client must send. Read it with
+Secrets drive it (all in Secret Manager; the runtime SA reads them):
+- `ange-website-mcp-auth-token` — a static bearer for header-based clients (Claude
+  Code / Desktop / Cursor). Read it with
   `gcloud secrets versions access latest --secret=ange-website-mcp-auth-token`.
 - `ange-website-mcp-strapi-token` — a Strapi **full-access** API token. **Activate
   it once**: in the admin (`<backend>/admin` → Settings → API Tokens → create, type
@@ -82,9 +83,30 @@ Two secrets drive it:
   printf '<the-token>' | gcloud secrets versions add ange-website-mcp-strapi-token --data-file=-
   gcloud run services update ange-website-mcp --region=europe-west1 --update-secrets=STRAPI_API_TOKEN=ange-website-mcp-strapi-token:latest
   ```
+- `ange-website-mcp-oauth-secret` + `ange-website-mcp-login-password` — enable the
+  **OAuth** connector for claude.ai (its custom-connector dialog has no field for a
+  static bearer). The service becomes its own OAuth 2.1 issuer; the login password
+  gates who may authorize a client. **Create these before the next deploy** — the
+  workflow references them, so a missing secret fails the MCP step:
+  ```bash
+  openssl rand -hex 32 | gcloud secrets create ange-website-mcp-oauth-secret    --data-file=-
+  printf '<a-strong-password>' | gcloud secrets create ange-website-mcp-login-password --data-file=-
+  for s in ange-website-mcp-oauth-secret ange-website-mcp-login-password; do
+    gcloud secrets add-iam-policy-binding "$s" \
+      --member="serviceAccount:ange-website-run@ange-website.iam.gserviceaccount.com" \
+      --role="roles/secretmanager.secretAccessor"
+  done
+  ```
+  `PUBLIC_URL` (the OAuth issuer) is set automatically by the deploy from the
+  service's own URL. Rotating `ange-website-mcp-oauth-secret` invalidates all live
+  Claude sessions (they re-authorize); changing the password applies on next login.
 
-Connect it from `https://<mcp-url>/mcp` with header `Authorization: Bearer <auth-token>`
-(see `mcp/README.md` for Claude Desktop / Cursor snippets).
+Connecting:
+- **claude.ai** (OAuth, custom connector): add a custom connector with URL
+  `https://<mcp-url>/mcp`, leave OAuth Client ID/Secret blank (Claude self-registers),
+  then enter the login password on the authorize screen.
+- **Header-based clients** (Claude Code, Cursor, Claude Desktop via `mcp-remote`):
+  `https://<mcp-url>/mcp` with `Authorization: Bearer <auth-token>` — see `mcp/README.md`.
 
 ## Custom domain (ange.rocks)
 

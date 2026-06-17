@@ -6,6 +6,7 @@ import express from 'express';
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { setupOAuth } from './oauth.js';
 
 const PORT = Number(process.env.PORT) || 8080;
 const STRAPI_URL = (process.env.STRAPI_URL || '').replace(/\/+$/, '');
@@ -251,21 +252,34 @@ function buildServer() {
 const app = express();
 app.use(express.json({ limit: '4mb' }));
 
-function authorized(req) {
-  if (!MCP_AUTH_TOKEN) return true; // open if no token configured (not recommended)
+// OAuth authorization server + resource server endpoints, for the claude.ai
+// custom connector. Returns null (and mounts nothing) unless PUBLIC_URL +
+// MCP_OAUTH_SECRET + MCP_LOGIN_PASSWORD are all configured.
+const oauth = setupOAuth(app);
+
+// POST /mcp accepts either the static bearer (Claude Code / Desktop sending an
+// Authorization header) or — when OAuth is on — a valid OAuth access token. An
+// unauthenticated request gets a 401 + WWW-Authenticate so claude.ai begins
+// OAuth discovery.
+function mcpAuthGate(req, res, next) {
   const header = req.headers['authorization'] || '';
-  return header === `Bearer ${MCP_AUTH_TOKEN}`;
+  if (MCP_AUTH_TOKEN && header === `Bearer ${MCP_AUTH_TOKEN}`) return next(); // static bearer
+  if (oauth) return oauth.bearer(req, res, next); // OAuth token, or 401 + discovery
+  if (!MCP_AUTH_TOKEN) return next(); // nothing configured: open (unchanged legacy behavior)
+  res.status(401).json({ jsonrpc: '2.0', error: { code: -32001, message: 'Unauthorized — send Authorization: Bearer <MCP_AUTH_TOKEN> or connect via OAuth.' }, id: null });
 }
 
 app.get('/healthz', (_req, res) =>
-  res.json({ ok: true, strapiUrl: Boolean(STRAPI_URL), strapiTokenConfigured: Boolean(STRAPI_API_TOKEN), authRequired: Boolean(MCP_AUTH_TOKEN) }),
+  res.json({
+    ok: true,
+    strapiUrl: Boolean(STRAPI_URL),
+    strapiTokenConfigured: Boolean(STRAPI_API_TOKEN),
+    authRequired: Boolean(MCP_AUTH_TOKEN) || Boolean(oauth),
+    oauth: Boolean(oauth),
+  }),
 );
 
-app.post('/mcp', async (req, res) => {
-  if (!authorized(req)) {
-    res.status(401).json({ jsonrpc: '2.0', error: { code: -32001, message: 'Unauthorized — set Authorization: Bearer <MCP_AUTH_TOKEN>.' }, id: null });
-    return;
-  }
+app.post('/mcp', mcpAuthGate, async (req, res) => {
   const server = buildServer();
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
   res.on('close', () => {
@@ -288,5 +302,7 @@ app.get('/mcp', methodNotAllowed);
 app.delete('/mcp', methodNotAllowed);
 
 app.listen(PORT, () => {
-  console.error(`ange-website MCP listening on :${PORT} (strapi=${STRAPI_URL || 'unset'}, auth=${MCP_AUTH_TOKEN ? 'on' : 'off'})`);
+  console.error(
+    `ange-website MCP listening on :${PORT} (strapi=${STRAPI_URL || 'unset'}, staticBearer=${MCP_AUTH_TOKEN ? 'on' : 'off'}, oauth=${oauth ? 'on' : 'off'})`,
+  );
 });
