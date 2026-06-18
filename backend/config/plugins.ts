@@ -20,6 +20,10 @@ const config = ({ env }: Core.Config.Shared.ConfigParams) => {
           publicFiles: true,
           uniform: true,
           basePath: '',
+          // The runtime SA has roles/storage.objectAdmin (object-level) but NOT
+          // storage.buckets.get, so the provider's bucket.exists() probe 403s and
+          // every upload 500s. Objects are managed fine without it — skip the probe.
+          skipCheckBucket: true,
         },
       },
     },
